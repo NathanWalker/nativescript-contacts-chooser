@@ -98,7 +98,7 @@ export class ContactsChooser extends Common implements ContactsChooserInterface 
                     });
 
                     if (phoneNumbers.length < 2) {
-                        return resolve(new ContactsChooserResult(name, phoneNumbers[0]));
+                        return resolve(new ContactsChooserResult({ name, phone: phoneNumbers[0]}));
                     }
 
                     let cancelButtonText = 'Cancel';
@@ -113,7 +113,7 @@ export class ContactsChooser extends Common implements ContactsChooserInterface 
                             return reject();
                         }
 
-                        return resolve(new ContactsChooserResult(name, res));
+                        return resolve(new ContactsChooserResult({name, phone: res}));
                     });
                 }
             });
