@@ -1,62 +1,192 @@
-import { Common, ContactsChooserInterface, ContactsChooserResult } from './contacts-chooser.common';
-import { Dialogs } from '@nativescript/core';
+import {
+  Common,
+  ContactsChooserInterface,
+  ContactsChooserResult,
+} from "./contacts-chooser.common";
+import { Dialogs, Utils, IOSHelper } from "@nativescript/core";
 
-export class ContactsChooser extends Common implements ContactsChooserInterface {
+export class ContactsChooser
+  extends Common
+  implements ContactsChooserInterface {
+  private _delegate: NSObject;
 
-    requestPermission(): Promise<Boolean> {
-        return new Promise((resolve, reject) => {
-            resolve(true);
-        });
-    }
+  constructor(multiSelection?: boolean) {
+    super();
+    this.multiSelection = multiSelection;
+  }
 
-    open(): Promise<ContactsChooserResult> {
-        return new Promise((resolve, reject) => {
-            let contact_picker = CNContactPickerViewController.alloc().init();
-            let appWindow = UIApplication.sharedApplication.keyWindow;
+  requestPermission(): Promise<Boolean> {
+    return new Promise((resolve, reject) => {
+      resolve(true);
+    });
+  }
 
-            // @ts-ignore
-            let Delegator = NSObject.extend({
-                contactPickerDidSelectContact(ctrl, contact: CNContact) {
-                    let name = `${contact.givenName} ${contact.familyName}`;
-                    let phoneNumbers = contact.phoneNumbers;
+  open(
+    pickerDisplayKeys?: Array<string>
+  ): Promise<ContactsChooserResult | Array<ContactsChooserResult>> {
+    return new Promise((resolve, reject) => {
+      let contact_picker = CNContactPickerViewController.alloc().init();
+      let appWindow = UIApplication.sharedApplication.keyWindow;
 
-                    if (phoneNumbers.count < 2) {
-                        return resolve(new ContactsChooserResult(name, phoneNumbers[0].value.stringValue.replace(/s+/g, '')));
-                    }
-
-                    let phones = [];
-                    let cancelButtonText = 'Cancel';
-
-                    for (let i = 0; i < phoneNumbers.count; i++) {
-                        phones.push(phoneNumbers[i].value.stringValue.replace(/\s+/g, ''));
-                    }
-
-                    setTimeout(() => {
-                        Dialogs.action({
-                            title: 'Select A Number',
-                            actions: phones,
-                            cancelButtonText
-                        })
-                        .then(res => {
-                            if (res === cancelButtonText) {
-                                return reject(null);
-                            }
-
-                            return resolve(new ContactsChooserResult(name, res));
-                        });
-                    }, 570);
-                },
-
-                contactPickerDidCancel(ctrl) {
-                    reject(null);
-                }
-            }, {
-                protocols: [CNContactPickerDelegate]
-            });
-
-            contact_picker.displayedPropertyKeys = NSArray.arrayWithArray([CNContactPhoneNumbersKey]);
-            contact_picker.delegate = Delegator.new();
-            appWindow.rootViewController.presentViewControllerAnimatedCompletion(contact_picker, true, null);
-        });
-    }
+      contact_picker.displayedPropertyKeys = NSArray.arrayWithArray(
+        pickerDisplayKeys || [
+          CNContactPhoneNumbersKey,
+          CNContactEmailAddressesKey,
+          CNContactFamilyNameKey,
+          CNContactGivenNameKey,
+          CNContactOrganizationNameKey,
+          CNContactDepartmentNameKey,
+        ]
+      );
+      if (this.multiSelection) {
+        this._delegate = DelegatorMulti.initWithOwner(this, resolve, reject);
+      } else {
+        this._delegate = Delegator.initWithOwner(this, resolve, reject);
+      }
+      contact_picker.delegate = this._delegate;
+      appWindow.rootViewController.presentViewControllerAnimatedCompletion(
+        contact_picker,
+        true,
+        null
+      );
+    });
+  }
 }
+
+@NativeClass()
+class Delegator extends NSObject implements CNContactPickerDelegate {
+  static ObjCProtocols = [CNContactPickerDelegate];
+  owner: WeakRef<ContactsChooser>;
+  resolve: any;
+  reject: any;
+
+  static initWithOwner(owner: ContactsChooser, resolve, reject) {
+    const delegate = <Delegator>Delegator.new();
+    delegate.owner = new WeakRef(owner);
+    delegate.resolve = resolve;
+    delegate.reject = reject;
+    return delegate;
+  }
+
+  contactPickerDidSelectContact(ctrl, contact: CNContact) {
+    console.log("contactPickerDidSelectContact", contact);
+
+    const jsContacts = extractFields(Utils.ios.collections.jsArrayToNSArray(<any>[contact]));
+    const singleContact = jsContacts[0];
+    if (contact.phoneNumbers.count === 1) {
+      this.resolve(
+        new ContactsChooserResult({
+          name: singleContact.name,
+          firstName: singleContact.firstName,
+          lastName: singleContact.lastName,
+          phone: contact.phoneNumbers
+            .objectAtIndex(0)
+            .value.stringValue.replace(/s+/g, ""),
+          emails: singleContact.emails,
+        })
+      );
+    } else {
+      const cancelButtonText = "Cancel";
+
+      setTimeout(() => {
+        Dialogs.action({
+          title: "Select A Number",
+          actions: singleContact.phones,
+          cancelButtonText,
+        }).then((res) => {
+          if (res === cancelButtonText) {
+            return this.reject(null);
+          }
+
+          return this.resolve(
+            new ContactsChooserResult({
+              name,
+              phone: res,
+              phones: singleContact.phones,
+              emails: singleContact.emails,
+            })
+          );
+        });
+      }, 570);
+    }
+  }
+
+  contactPickerDidCancel(ctrl) {
+    this.reject(null);
+  }
+}
+
+@NativeClass()
+class DelegatorMulti extends NSObject implements CNContactPickerDelegate {
+  static ObjCProtocols = [CNContactPickerDelegate];
+  owner: WeakRef<ContactsChooser>;
+  resolve: any;
+  reject: any;
+
+  static initWithOwner(owner: ContactsChooser, resolve, reject) {
+    const delegate = <DelegatorMulti>DelegatorMulti.new();
+    delegate.owner = new WeakRef(owner);
+    delegate.resolve = resolve;
+    delegate.reject = reject;
+    return delegate;
+  }
+
+  contactPickerDidSelectContacts(
+    ctrl: CNContactPickerViewController,
+    contacts: NSArray<CNContact>
+  ) {
+    console.log("contactPickerDidSelectContacts", contacts);
+    const jsContacts = extractFields(contacts);
+    const chooserResults = [];
+    for (const jsContact of jsContacts) {
+      chooserResults.push(new ContactsChooserResult(jsContact));
+    }
+    this.resolve(chooserResults);
+  }
+
+  contactPickerDidCancel(ctrl) {
+    this.reject(null);
+  }
+}
+
+const extractFields = function (
+  contacts: NSArray<CNContact>
+): Array<{
+  name: string;
+  firstName: string;
+  lastName: string;
+  emails: Array<string>;
+  phones: Array<string>;
+}> {
+  const jsContacts = [];
+  for (let i = 0; i < contacts.count; i++) {
+    const contact: CNContact = contacts.objectAtIndex(i);
+    // CNContactFormatter.descriptorForRequiredKeysForStyle(CNContactFormatterStyle.FullName),
+    const name = CNContactFormatter.stringFromContactStyle(
+      contact,
+      CNContactFormatterStyle.FullName
+    );
+
+    // may want this back:
+    // Determine if fullName above gives back same or better
+    // let composedName = `${contact.givenName} ${contact.familyName}`;
+
+    const emails = [];
+    for (let i = 0; i < contact.emailAddresses.count; i++) {
+      emails.push(contact.emailAddresses.objectAtIndex(i).value);
+    }
+
+    const phones = [];
+    for (let i = 0; i < contact.phoneNumbers.count; i++) {
+      phones.push(contact.phoneNumbers.objectAtIndex(i).value.stringValue);
+    }
+    jsContacts.push({
+      name,
+      firstName: contact.givenName,
+      lastName: contact.familyName,
+      emails,
+      phones,
+    });
+  }
+  return jsContacts;
+};

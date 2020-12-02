@@ -10,6 +10,11 @@ import { requestPermission, hasPermission } from 'nativescript-permissions';
 
 export class ContactsChooser extends Common implements ContactsChooserInterface {
 
+  constructor(multiSelection?: boolean) {
+    super();
+    this.multiSelection = multiSelection;
+  }
+
     private permission = android.Manifest.permission.READ_CONTACTS;
 
     requestPermission(): Promise<Boolean> {

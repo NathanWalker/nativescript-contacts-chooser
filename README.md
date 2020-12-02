@@ -19,6 +19,11 @@ Describe any usage specifics for your plugin. Give examples for Android, iOS, An
 ```javascript
 import { ContactsChooser, ContactsChooserResult } from 'nativescript-contacts-chooser';
 
+const chooser = new ContactsChooser();
+
+// if multi selection desired, use:
+// const chooser = new ContactsChooser(true);
+
 //Request for permission (Android)
 chooser.requestPermission();
 

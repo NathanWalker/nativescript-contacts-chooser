@@ -1,18 +1,30 @@
 export interface ContactsChooserInterface {
-    open(): Promise<ContactsChooserResult>;
-    requestPermission(): Promise<Boolean>;
+  open(pickerDisplayKeys?: Array<string>): Promise<ContactsChooserResult | Array<ContactsChooserResult>>;
+  requestPermission(): Promise<Boolean>;
 }
 
-export class ContactsChooserResult {
+export interface IContactChooserResult {
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  phones?: Array<string>;
+  emails?: Array<string>;
+  address?: string;
+  image?: any;
+}
 
-    public name: String;
-    public phone: String;
+export class ContactsChooserResult implements IContactChooserResult {
 
-    constructor(name: String, phone: String) {
-        this.name = name;
-        this.phone = phone;
+  constructor(props?: IContactChooserResult) {
+    if (props) {
+      for (const key in props) {
+        this[key] = props[key];
+      }
     }
+  }
 }
 
 export class Common {
+  multiSelection = false;
 }
