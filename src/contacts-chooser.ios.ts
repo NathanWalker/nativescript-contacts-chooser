@@ -1,9 +1,9 @@
+import { Dialogs, Utils } from "@nativescript/core";
 import {
   Common,
   ContactsChooserInterface,
   ContactsChooserResult,
 } from "./contacts-chooser.common";
-import { Dialogs, Utils, IOSHelper } from "@nativescript/core";
 
 export class ContactsChooser
   extends Common
@@ -25,8 +25,8 @@ export class ContactsChooser
     pickerDisplayKeys?: Array<string>
   ): Promise<ContactsChooserResult | Array<ContactsChooserResult>> {
     return new Promise((resolve, reject) => {
-      let contact_picker = CNContactPickerViewController.alloc().init();
-      let appWindow = UIApplication.sharedApplication.keyWindow;
+      const contact_picker = CNContactPickerViewController.alloc().init();
+      const appWindow = UIApplication.sharedApplication.keyWindow;
 
       contact_picker.displayedPropertyKeys = NSArray.arrayWithArray(
         pickerDisplayKeys || [
@@ -71,7 +71,9 @@ class Delegator extends NSObject implements CNContactPickerDelegate {
   contactPickerDidSelectContact(ctrl, contact: CNContact) {
     console.log("contactPickerDidSelectContact", contact);
 
-    const jsContacts = extractFields(Utils.ios.collections.jsArrayToNSArray(<any>[contact]));
+    const jsContacts = extractFields(
+      Utils.ios.collections.jsArrayToNSArray(<any>[contact])
+    );
     const singleContact = jsContacts[0];
     if (contact.phoneNumbers.count === 1) {
       this.resolve(

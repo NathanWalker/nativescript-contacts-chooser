@@ -4,9 +4,15 @@ a code-behind file. The code-behind is a great place to place your view
 logic, and to set up your page’s data binding.
 */
 
+declare var io: any;
+
+
 import { NavigatedData, Page } from "@nativescript/core";
+import {
+    ContactsChooser,
+    ContactsChooserResult
+} from "nativescript-contacts-chooser";
 import { HomeViewModel } from "./home-view-model";
-import { ContactsChooser, ContactsChooserResult } from 'nativescript-contacts-chooser';
 
 const chooser = new ContactsChooser(true);
 
@@ -18,8 +24,7 @@ export function onNavigatingTo(args: NavigatedData) {
 }
 
 export function openContact() {
-    chooser.open()
-        .then((res: ContactsChooserResult) => {
-            console.log(res);
-        })
+    chooser.open().then((res: ContactsChooserResult) => {
+        console.log(res);
+    });
 }

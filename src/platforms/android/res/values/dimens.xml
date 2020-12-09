@@ -1,0 +1,6 @@
+<resources>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="ucrop_margin_top_controls_text">10dp</dimen>
+    <dimen name="nstudio_text_size_controls_text">18sp</dimen>
+</resources>

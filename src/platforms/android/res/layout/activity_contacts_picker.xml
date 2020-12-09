@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" 
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" 
+    android:paddingLeft="16dp"
+    android:paddingTop="16dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="16dp"
+    android:layout_marginTop="4dp"
+    tools:context="io.nstudio.contactpicker.ContactsPickerActivity">
+
+    <EditText  
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/txt_filter"
+        android:hint="@string/txt_search"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView 
+        android:id="@+id/txt_load_progress" 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:layout_below="@+id/txt_filter"
+        android:text="Loading..." />
+
+    <ListView 
+        android:id="@+id/lst_contacts_chooser" 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:layout_above="@+id/btn_done"
+        android:layout_below="@+id/txt_load_progress" />
+        
+    <Button 
+        android:id="@+id/btn_done" 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:layout_alignParentBottom="true"
+        android:text="@string/txt_done"
+        style="@style/nstudio_DoneButton" />
+
+</RelativeLayout>
